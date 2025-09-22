@@ -1,21 +1,59 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- main
+  branches:
+    include:
+      - main   # Run pipeline when code is pushed to main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+variables:
+  node_version: '20.x'
+  azureServiceConnection: 'AzureSub-Connection'  # <-- replace with your Service Connection name
+  webAppName: 'nextjs-demo-app'                  # <-- replace with your App Service name
+  artifactName: 'nextjs-build'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+stages:
+- stage: Build
+  displayName: 'Build Next.js App'
+  jobs:
+  - job: BuildJob
+    steps:
+    - checkout: self
+    - task: UseNode@1
+      inputs:
+        version: '$(node_version)'
+      displayName: 'Install Node.js'
+    - script: npm ci
+      displayName: 'Install dependencies'
+    - script: npm run build
+      displayName: 'Build Next.js app'
+    - task: ArchiveFiles@2
+      displayName: 'Archive build'
+      inputs:
+        rootFolderOrFile: '.'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+        replaceExistingArchive: true
+    - publish: $(Build.ArtifactStagingDirectory)/app.zip
+      artifact: $(artifactName)
+
+- stage: Deploy
+  displayName: 'Deploy to Azure App Service'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployJob
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: $(artifactName)
+          - task: AzureWebApp@1
+            displayName: 'Deploy to App Service'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appName: '$(webAppName)'
+              package: '$(Pipeline.Workspace)/$(artifactName)/app.zip'
+              startupCommand: 'npm start'
