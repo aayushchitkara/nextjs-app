@@ -4,12 +4,12 @@ trigger:
       - main   # Run pipeline when code is pushed to main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default   # 👈 Use your self-hosted agent
 
 variables:
   node_version: '20.x'
-  azureServiceConnection: 'AzureSub-Connection'  # <-- replace with your Service Connection name
-  webAppName: 'nextjs-demo-app'                  # <-- replace with your App Service name
+  azureServiceConnection: 'aayushchitkara'   # 👈 Replace with your actual Service Connection name
+  webAppName: 'nextjs-demo-app'              # 👈 Replace with your App Service name
   artifactName: 'nextjs-build'
 
 stages:
@@ -23,7 +23,7 @@ stages:
       inputs:
         version: '$(node_version)'
       displayName: 'Install Node.js'
-    - script: npm ci
+    - script: npm install
       displayName: 'Install dependencies'
     - script: npm run build
       displayName: 'Build Next.js app'
@@ -35,25 +35,4 @@ stages:
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
         replaceExistingArchive: true
-    - publish: $(Build.ArtifactStagingDirectory)/app.zip
-      artifact: $(artifactName)
-
-- stage: Deploy
-  displayName: 'Deploy to Azure App Service'
-  dependsOn: Build
-  jobs:
-  - deployment: DeployJob
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: $(artifactName)
-          - task: AzureWebApp@1
-            displayName: 'Deploy to App Service'
-            inputs:
-              azureSubscription: '$(azureServiceConnection)'
-              appName: '$(webAppName)'
-              package: '$(Pipeline.Workspace)/$(artifactName)/app.zip'
-              startupCommand: 'npm start'
+    - publish: $(
