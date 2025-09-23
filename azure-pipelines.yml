@@ -37,8 +37,8 @@ steps:
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
-    azureSubscription: 'azure-sp-connection'   # Service connection name
+    azureSubscription: 'azure-sp-connection'   # your service connection
     appType: 'webAppLinux'
-    WebAppName: 'nextjs-demo123'               # <-- Replace with your Web App name
+    WebAppName: 'nextjs-demo-app'              # your App Service name
     packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
   displayName: 'Deploy to Azure Web App'
