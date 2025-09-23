@@ -19,11 +19,15 @@ steps:
     npm run build
   displayName: 'Install & Build Next.js'
 
-# 3. Prepare artifact (only required files)
+# 3. Prepare artifact (Windows-friendly)
 - script: |
-    mkdir $(Build.ArtifactStagingDirectory)/app
-    cp -R .next public package.json package-lock.json $(Build.ArtifactStagingDirectory)/app
-  displayName: 'Copy build artifacts'
+    mkdir "$(Build.ArtifactStagingDirectory)\app"
+    xcopy .next "$(Build.ArtifactStagingDirectory)\app\.next" /E /I /Y
+    xcopy public "$(Build.ArtifactStagingDirectory)\app\public" /E /I /Y
+    copy package.json "$(Build.ArtifactStagingDirectory)\app\"
+    copy package-lock.json "$(Build.ArtifactStagingDirectory)\app\"
+  displayName: 'Copy build artifacts (Windows)'
+
 
 # 4. Archive artifact
 - task: ArchiveFiles@2
