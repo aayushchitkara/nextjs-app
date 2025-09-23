@@ -3,7 +3,6 @@ trigger:
     include:
       - main   # run pipeline on pushes to main
 
-# Use your self-hosted agent
 pool:
   name: MyAgentPool
 
@@ -12,7 +11,7 @@ steps:
 - checkout: self
   fetchDepth: 1
 
-# 2. Setup Node.js (for local validation)
+# 2. Setup Node.js (optional local validation)
 - task: NodeTool@0
   inputs:
     versionSpec: '20.x'
@@ -32,20 +31,12 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/source.zip'
   displayName: 'Archive full source code'
 
-# 5. Publish artifact (optional for history)
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/source.zip'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publish build artifact'
-
-# 6. Deploy full source to Azure Web App (Oryx will build it)
+# 5. Deploy full source to Azure Web App
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
     azureSubscription: 'azure-sp-connection'   # must match your service connection
     appType: 'webAppLinux'
-    WebAppName: 'nextjs-demo-app'              # your App Service name
+    WebAppName: 'nextjs-demo-app'              # must match your App Service
     packageForLinux: '$(Build.ArtifactStagingDirectory)/source.zip'
   displayName: 'Deploy full source to Azure Web App'
