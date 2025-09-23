@@ -3,24 +3,28 @@ trigger:
     include:
       - main   # run pipeline on pushes to main
 
-# Use your self-hosted Windows agent
+# Use your self-hosted agent
 pool:
   name: MyAgentPool
 
 steps:
-# 1. Setup Node.js (for build/test steps if needed)
+# 1. Checkout code
+- checkout: self
+  fetchDepth: 1
+
+# 2. Setup Node.js (for local validation)
 - task: NodeTool@0
   inputs:
     versionSpec: '20.x'
   displayName: 'Use Node.js 20'
 
-# 2. Install dependencies & run build locally (optional check)
+# 3. (Optional) Build locally to catch errors early
 - script: |
     npm ci
     npm run build
   displayName: 'Install & Build Next.js (local check)'
 
-# 3. Archive full source code
+# 4. Archive full source code
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
@@ -28,7 +32,7 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/source.zip'
   displayName: 'Archive full source code'
 
-# 4. Publish artifact (optional, for pipeline history)
+# 5. Publish artifact (optional for history)
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/source.zip'
@@ -36,11 +40,11 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish build artifact'
 
-# 5. Deploy full source code to Azure Web App
+# 6. Deploy full source to Azure Web App (Oryx will build it)
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
-    azureSubscription: 'azure-sp-connection'   # your service connection
+    azureSubscription: 'azure-sp-connection'   # must match your service connection
     appType: 'webAppLinux'
     WebAppName: 'nextjs-demo-app'              # your App Service name
     packageForLinux: '$(Build.ArtifactStagingDirectory)/source.zip'
