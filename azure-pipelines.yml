@@ -4,7 +4,7 @@ trigger:
       - main   # run pipeline on pushes to main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: MyAgentPool   # use your self-hosted pool
 
 steps:
 # 1. Setup Node.js
@@ -37,8 +37,8 @@ steps:
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
-    azureSubscription: 'azure-sp-connection'   # your service connection
+    azureSubscription: 'azure-sp-connection'   # Service connection name
     appType: 'webAppLinux'
-    WebAppName: 'nextjs-demo-app'              # your App Service name
+    WebAppName: 'nextjs-demo-app'              # <-- your real App Service name
     packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
   displayName: 'Deploy to Azure Web App'
