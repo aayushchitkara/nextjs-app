@@ -3,45 +3,45 @@ trigger:
     include:
       - main   # run pipeline on pushes to main
 
+# Use your self-hosted Windows agent
 pool:
   name: MyAgentPool
 
 steps:
-# 1. Setup Node.js
+# 1. Setup Node.js (for build/test steps if needed)
 - task: NodeTool@0
   inputs:
     versionSpec: '20.x'
   displayName: 'Use Node.js 20'
 
-# 2. Install dependencies & build Next.js
+# 2. Install dependencies & run build locally (optional check)
 - script: |
     npm ci
     npm run build
-  displayName: 'Install & Build Next.js'
+  displayName: 'Install & Build Next.js (local check)'
 
-# 3. Prepare artifact (Windows-friendly)
-- script: |
-    mkdir "$(Build.ArtifactStagingDirectory)\app"
-    xcopy .next "$(Build.ArtifactStagingDirectory)\app\.next" /E /I /Y
-    xcopy public "$(Build.ArtifactStagingDirectory)\app\public" /E /I /Y
-    copy package.json "$(Build.ArtifactStagingDirectory)\app\"
-    if exist package-lock.json copy package-lock.json "$(Build.ArtifactStagingDirectory)\app\"
-  displayName: 'Copy build artifacts (Windows)'
-
-# 4. Archive artifact
+# 3. Archive full source code
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)\app'
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
     includeRootFolder: false
-    archiveFile: '$(Build.ArtifactStagingDirectory)\app.zip'
-  displayName: 'Archive app.zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/source.zip'
+  displayName: 'Archive full source code'
 
-# 5. Deploy to Azure Web App
+# 4. Publish artifact (optional, for pipeline history)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/source.zip'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish build artifact'
+
+# 5. Deploy full source code to Azure Web App
 - task: AzureRmWebAppDeployment@4
   inputs:
     ConnectionType: 'AzureRM'
-    azureSubscription: 'azure-sp-connection'   # service connection name
+    azureSubscription: 'azure-sp-connection'   # your service connection
     appType: 'webAppLinux'
     WebAppName: 'nextjs-demo-app'              # your App Service name
-    packageForLinux: '$(Build.ArtifactStagingDirectory)\app.zip'
-  displayName: 'Deploy to Azure Web App'
+    packageForLinux: '$(Build.ArtifactStagingDirectory)/source.zip'
+  displayName: 'Deploy full source to Azure Web App'
