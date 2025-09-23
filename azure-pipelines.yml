@@ -3,8 +3,9 @@ trigger:
     include:
       - main   # run pipeline on pushes to main
 
+# Use your self-hosted agent
 pool:
-  name: MyAgentPool   # use your self-hosted pool
+  name: MyAgentPool
 
 steps:
 # 1. Setup Node.js
@@ -19,30 +20,4 @@ steps:
     npm run build
   displayName: 'Install & Build Next.js'
 
-# 3. Prepare artifact (Windows-friendly)
-- script: |
-    mkdir "$(Build.ArtifactStagingDirectory)\app"
-    xcopy .next "$(Build.ArtifactStagingDirectory)\app\.next" /E /I /Y
-    xcopy public "$(Build.ArtifactStagingDirectory)\app\public" /E /I /Y
-    copy package.json "$(Build.ArtifactStagingDirectory)\app\"
-    copy package-lock.json "$(Build.ArtifactStagingDirectory)\app\"
-  displayName: 'Copy build artifacts (Windows)'
-
-
-# 4. Archive artifact
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/app'
-    includeRootFolder: false
-    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
-  displayName: 'Archive app.zip'
-
-# 5. Deploy to Azure Web App
-- task: AzureRmWebAppDeployment@4
-  inputs:
-    ConnectionType: 'AzureRM'
-    azureSubscription: 'azure-sp-connection'   # Service connection name
-    appType: 'webAppLinux'
-    WebAppName: 'nextjs-demo-app'              # <-- your real App Service name
-    packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
-  displayName: 'Deploy to Azure Web App'
+# 3. Prepa
